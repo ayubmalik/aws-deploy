@@ -1,0 +1,5 @@
+#cloud-config
+repo_update: false
+#repo_upgrade: all
+
+# do nothing

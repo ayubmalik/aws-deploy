@@ -1,0 +1,132 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB5BTPG": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "SecurityGroups": [
+          {
+            "Ref": "SG1K3R5"
+          }
+        ],
+        "Listeners": [
+          {
+            "InstancePort": "80",
+            "LoadBalancerPort": "80",
+            "Protocol": "HTTP"
+          }
+        ],
+        "Subnets": [
+          {
+            "Ref": "SubnetA"
+          }
+        ],
+        "Instances": [
+          {
+            "Ref": "I0001A"
+          },
+          {
+            "Ref": "I0001B"
+          },
+          {
+            "Ref": "I0001C"
+          }
+        ]
+      }
+    },
+    "SG1K3R5": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow http to client host",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "172.30.0.0/16"
+          }
+        ]
+      }
+    },
+    "I0001A": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-c39c46b0",
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Ref": "SubnetA"
+        }
+      }
+    },
+    "I0001B": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-c39c46b0",
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Ref": "SubnetB"
+        }
+      }
+    },
+    "I0001C": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-c39c46b0",
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Ref": "SubnetC"
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "VpcId": {
+      "Description": "Which VPC to use",
+      "Type": "String",
+      "Default": "vpc-50274435"
+    },
+    "SubnetA": {
+      "Description": "ID of subnet/zone within our VPC. Defaults to zone 1a",
+      "Type": "String",
+      "Default": "subnet-7b5c270c"
+    },
+    "SubnetB": {
+      "Description": "ID of subnet/zone within our VPC. Defaults to zone 1b",
+      "Type": "String",
+      "Default": "subnet-e61f8dbf"
+    },
+    "SubnetC": {
+      "Description": "ID of subnet/zone within our VPC. Defaults to zone 1c",
+      "Type": "String",
+      "Default": "subnet-6e6c3f0b"
+    },
+    "InstanceType": {
+      "Description": "Instance type",
+      "Type": "String",
+      "Default": "t2.micro"
+    },
+    "KeyName": {
+      "Description": "SSH KeyName",
+      "Type": "String",
+      "Default": "aws-keyname"
+    }
+  }
+}

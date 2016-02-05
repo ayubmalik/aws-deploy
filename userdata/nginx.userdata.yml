@@ -1,0 +1,42 @@
+#cloud-config
+repo_update: false
+#repo_upgrade: all
+
+# TODO user repo_additions to create repo file rather than write file manually?
+
+write_files:
+  - path: /etc/yum.repos.d/nginx.repo
+    permissions: "0644"
+    owner: "root"
+    content: |
+      [nginx]
+      name=nginx repo
+      baseurl=http://nginx.org/packages/centos/7/$basearch/
+      gpgcheck=0
+  - path: /etc/nginx/conf.d/default.conf
+    permissions: "0644"
+    owner: "root"
+    content: |
+      server {
+        listen 80;
+        server_name  localhost;
+
+        location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+          add_header X-Via "$hostname";
+        }
+
+        error_page 500 502 503 504  /50x.html;
+        location = /50x.html {
+          root   /usr/share/nginx/html;
+        }
+      }
+
+# install nginx
+packages:
+  - nginx
+
+runcmd:
+  -  /usr/bin/systemctl start nginx.service
+
