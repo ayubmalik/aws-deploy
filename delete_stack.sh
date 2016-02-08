@@ -31,7 +31,7 @@ echo "terminating instances"
 aws ec2 terminate-instances --instance-ids ${InstanceIDs}
 delay=5
 PendingIDs=
-while [[ -z "${PendingIDs}" ]]; do
+while [[ ! -z "${InstanceIDs}"  && -z "${PendingIDs}" ]]; do
   echo "Waiting ${delay}s for instances to terminate..."
   sleep ${delay}
   PendingIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=terminated" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)

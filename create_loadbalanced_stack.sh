@@ -38,10 +38,11 @@ awsresultfield() {
 }
 
 readparam KeyName "aws-keyname"
-readparam AppName "app01"
 readparam VPCID "vpc-50274435"
+readparam AppName "app01"
 readparam LBName "lb_${params[AppName]}"
 readparam SecurityGroupName "sg_${params[AppName]}"
+readparam SecurityGroupPorts "22 80 2552"
 readparam SubnetName "subnet_${params[AppName]}"
 readparam SubnetCIDR "172.30.9.0/24"
 readparam ImageID "ami-bff32ccc"
@@ -62,6 +63,10 @@ runaws "ec2 create-security-group \
 
 params[SecurityGroupID]=$(awsresultfield 1)
 runaws "ec2 create-tags --resources ${params[SecurityGroupID]} --tags Key=Name,Value=${params[SecurityGroupName]}"
+
+for port in "${params[SecurityGroupPorts]}"; do
+  runaws "ec2 authorize-security-group-ingress --group-id ${params[SecurityGroupID]} --protocol tcp --port ${port} --cidr 0.0.0.0/0"
+done
 
 # TODO add rules for security group
 
