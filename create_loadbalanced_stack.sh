@@ -4,10 +4,15 @@ declare lastawsresult
 
 rollback() {
   echo "Rolling back..."
-  # delete instances
-  # delete subnets
-  # delete loadbalancer
-  # delete securitgroups
+  echo "terminatining instances"
+  $(aws ec2 terminate-instances --instance-ids ${params[InstanceIDs]})
+  sleep 0.5
+  echo "deleting security groups"
+  $(aws ec2 delete-security-group --group-id ${params[SecurityGroupID]})
+  sleep 0.5
+  echo "deleting subnet"
+  $(aws ec2 delete-subnet --subnet-id ${params[SubnetID]})
+  exit 1
 }
 
 readparam() {
@@ -21,7 +26,7 @@ readparam() {
 runaws() {
   cmd=${1}
   echo "running 'aws ${cmd}'"
-   awsresult=$(aws ${cmd})
+  awsresult=$(aws ${cmd})
   if [[ $? -ne 0 ]]; then rollback; fi
 }
 
@@ -46,30 +51,32 @@ readparam NumberOfInstances 2
 runaws "ec2 create-subnet --cidr-block ${params[SubnetCIDR]} --vpc-id ${params[VPCID]}"
 params[SubnetID]=$(awsresultfield 6)
 
-echo "Created Subnet:  ${params[SubnetID]}"
 #tag with name
 runaws "ec2 create-tags --resources ${params[SubnetID]} --tags Key=Name,Value=${params[SubnetName]}"
 
 # create security group + tag
 runaws "ec2 create-security-group \
+  --vpc-id ${params[VPCID]} \
   --group-name ${params[SecurityGroupName]} \
   --description ${params[SecurityGroupName]}"
 
 params[SecurityGroupID]=$(awsresultfield 1)
 runaws "ec2 create-tags --resources ${params[SecurityGroupID]} --tags Key=Name,Value=${params[SecurityGroupName]}"
 
-exit 0
-# create instances
+# TODO add rules for security group
+
+# create instances + tag
 runaws "ec2 run-instances \
   --instance-type t2.micro \
   --associate-public-ip-address \
   --key-name ${params[KeyName]} \
   --image-id ${params[ImageID]} \
   --subnet-id ${params[SubnetID]} \
+  --security-group-ids ${params[SecurityGroupID]} \
   --count ${params[NumberOfInstances]}"
 
 params[InstanceIDs]=$(awsresultfield 8 INSTANCES)
-echo "Created Instances: ${params[InstanceIDs]}"
+echo "IDs: ${params[InstanceIDs]}"
 
 # tag instances
 runaws "ec2 create-tags --resources ${params[InstanceIDs]} --tags Key=Name,Value=${params[AppName]}"
