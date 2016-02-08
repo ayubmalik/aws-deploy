@@ -11,7 +11,8 @@ runaws() {
 
 awsresultfield() {
   pos=${1}
-  value=$(echo ${awsresult} | -f${pos})
+  pattern=${2}
+  value=$(echo "${awsresult}" | grep "${pattern}" | cut -f${pos})
   echo ${value}
 }
 
@@ -22,7 +23,7 @@ echo "$instances"
 echo
 
 runaws "ec2 describe-subnets "
-subs=$(echo "$awsresult" | cut -f8)
+subs=$(awsresultfield 8)
 echo "$subs"
 
 #aws ec2 describe-instances
