@@ -4,7 +4,7 @@ declare lastawsresult
 
 rollback() {
   echo "Rolling back..."
-  echo "terminatining instances"
+  echo "terminating instances"
   $(aws ec2 terminate-instances --instance-ids ${params[InstanceIDs]})
   sleep 0.5
   echo "deleting security groups"
