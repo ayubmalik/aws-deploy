@@ -64,7 +64,7 @@ runaws "ec2 create-security-group \
 params[SecurityGroupID]=$(awsresultfield 1)
 runaws "ec2 create-tags --resources ${params[SecurityGroupID]} --tags Key=Name,Value=${params[SecurityGroupName]}"
 
-for port in "${params[SecurityGroupPorts]}"; do
+for port in ${params[SecurityGroupPorts]}; do
   runaws "ec2 authorize-security-group-ingress --group-id ${params[SecurityGroupID]} --protocol tcp --port ${port} --cidr 0.0.0.0/0"
 done
 
