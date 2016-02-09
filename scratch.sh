@@ -15,7 +15,6 @@ awsresultfield() {
   echo ${value}
 }
 
-
 runaws "ec2 describe-subnets"
 result=$(awsresultfield 8)
 echo $result

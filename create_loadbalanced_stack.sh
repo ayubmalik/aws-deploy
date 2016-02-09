@@ -5,6 +5,7 @@ declare lastawsresult
 trap rollback SIGINT
 
 rollback() {
+  # TODO add tests for variables
   echo
   echo "*** Rolling back ***"
   echo "terminating instances"
@@ -55,10 +56,10 @@ readparam NumberOfInstances 2
 runaws "ec2 create-subnet --cidr-block ${params[SubnetCIDR]} --vpc-id ${params[VPCID]}"
 params[SubnetID]=$(awsresultfield 6)
 
-#tag with name
+# tag with name
 runaws "ec2 create-tags --resources ${params[SubnetID]} --tags Key=Name,Value=${params[SubnetName]}"
 
-# create security group + tag
+# create security group + tag name
 runaws "ec2 create-security-group \
   --vpc-id ${params[VPCID]} \
   --group-name ${params[SecurityGroupName]} \
@@ -67,13 +68,12 @@ runaws "ec2 create-security-group \
 params[SecurityGroupID]=$(awsresultfield 1)
 runaws "ec2 create-tags --resources ${params[SecurityGroupID]} --tags Key=Name,Value=${params[SecurityGroupName]}"
 
+# add inbound roles
 for port in ${params[SecurityGroupPorts]}; do
   runaws "ec2 authorize-security-group-ingress --group-id ${params[SecurityGroupID]} --protocol tcp --port ${port} --cidr 0.0.0.0/0"
 done
 
-# TODO add rules for security group
-
-# create instances + tag
+# create instances + tag name
 runaws "ec2 run-instances \
   --instance-type t2.micro \
   --associate-public-ip-address \
@@ -85,16 +85,15 @@ runaws "ec2 run-instances \
 
 params[InstanceIDs]=$(awsresultfield 8 INSTANCES)
 echo "IDs: ${params[InstanceIDs]}"
-
-# tag instances
 runaws "ec2 create-tags --resources ${params[InstanceIDs]} --tags Key=Name,Value=${params[AppName]}"
 
-# create load balancer
+# create lb
 runaws "elb create-load-balancer \
-   --load-balancer-name ${params[LBName]} \
-   --subnets ${params[SubnetID]} \
-   --security-groups ${params[SecurityGroupID]} \
-   --listeners Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80"
+  --load-balancer-name ${params[LBName]} \
+  --subnets ${params[SubnetID]} \
+  --security-groups ${params[SecurityGroupID]} \
+  --listeners Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80"
 
-# register instances
-runaws "elb register-instances-with-load-balancer --load-balancer-name ${params[LBName]} --instances ${params[InstanceIDs]}"
+# register lb instances
+runaws "elb register-instances-with-load-balancer \
+  --load-balancer-name ${params[LBName]} --instances ${params[InstanceIDs]}"
