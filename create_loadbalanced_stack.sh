@@ -28,7 +28,7 @@ readparam() {
 
 runaws() {
   cmd=${1}
-  echo "running 'aws ${cmd}'"
+  echo "aws ${cmd}"
   awsresult=$(aws ${cmd})
   if [[ $? -ne 0 ]]; then rollback; fi
 }

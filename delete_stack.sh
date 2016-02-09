@@ -25,17 +25,20 @@ InstanceIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Val
 echo "Instances: ${InstanceIDs}"
 if [[ ! -z ${InstanceIDs} ]]; then
   delay=5
-  TerminatedIDs=
+  ShuttingDownIDs=${InstanceIDs}
   echo "deregistering instances from loadbalancers"
   aws elb deregister-instances-from-load-balancer --load-balancer-name ${LBName} --instances ${InstanceIDs}
   echo "terminating instances"
   aws ec2 terminate-instances --instance-ids ${InstanceIDs}
-  while [[ -z ${TerminatedIDs} ]]; do
-    echo "Waiting ${delay}s for instances to terminate..."
+  while [[ ! -z ${ShuttingDownIDs} ]]; do
+    echo "Waiting ${delay}s for all instances to terminate..."
     sleep ${delay}
-    TerminatedIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=terminated" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
+    ShuttingDownIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=shutting-down" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
   done
 fi
+echo "Checking instance state after termination"
+InstanceIDs=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName}" | grep INSTANCES)
+echo "Instances: ${InstanceIDs}"
 
 echo "Deleting load balancer"
 aws elb delete-load-balancer --load-balancer-name ${LBName}
