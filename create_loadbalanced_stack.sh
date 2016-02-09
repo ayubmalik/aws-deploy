@@ -95,3 +95,6 @@ runaws "elb create-load-balancer \
    --subnets ${params[SubnetID]} \
    --security-groups ${params[SecurityGroupID]} \
    --listeners Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80"
+
+# register instances
+runaws "elb register-instances-with-load-balancer --load-balancer-name ${params[LBName]} --instances ${params[InstanceIDs]}"
