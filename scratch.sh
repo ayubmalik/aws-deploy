@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 declare awsresult
 
 runaws() {
@@ -16,14 +15,16 @@ awsresultfield() {
   echo ${value}
 }
 
-runaws "ec2 describe-instances "
-instances=$(echo "$awsresult" | grep INSTANCES | cut -f8)
-echo "$instances"
 
-echo
+runaws "ec2 describe-subnets"
+result=$(awsresultfield 8)
+echo $result
 
-runaws "ec2 describe-subnets "
-subs=$(awsresultfield 8)
-echo "$subs"
+runaws "elb create-load-balancer \
+   --load-balancer-name lb-spike-01 \
+   --subnets subnet-7b5c270c \
+   --security-groups sg-f69d5f92 \
+   --listeners Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80"
 
-#aws ec2 describe-instances
+
+echo $awsresult

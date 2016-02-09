@@ -2,8 +2,11 @@
 declare -A params
 declare lastawsresult
 
+trap rollback SIGINT
+
 rollback() {
-  echo "Rolling back..."
+  echo
+  echo "*** Rolling back ***"
   echo "terminating instances"
   $(aws ec2 terminate-instances --instance-ids ${params[InstanceIDs]})
   sleep 0.5
@@ -40,10 +43,10 @@ awsresultfield() {
 readparam KeyName "aws-keyname"
 readparam VPCID "vpc-50274435"
 readparam AppName "app01"
-readparam LBName "lb_${params[AppName]}"
-readparam SecurityGroupName "sg_${params[AppName]}"
+readparam LBName "lb-${params[AppName]}"
+readparam SecurityGroupName "secgroup-${params[AppName]}"
 readparam SecurityGroupPorts "22 80 2552"
-readparam SubnetName "subnet_${params[AppName]}"
+readparam SubnetName "subnet-${params[AppName]}"
 readparam SubnetCIDR "172.30.9.0/24"
 readparam ImageID "ami-bff32ccc"
 readparam NumberOfInstances 2
@@ -85,3 +88,10 @@ echo "IDs: ${params[InstanceIDs]}"
 
 # tag instances
 runaws "ec2 create-tags --resources ${params[InstanceIDs]} --tags Key=Name,Value=${params[AppName]}"
+
+# create load balancer
+runaws "elb create-load-balancer \
+   --load-balancer-name ${params[LBName]} \
+   --subnets ${params[SubnetID]} \
+   --security-groups ${params[SecurityGroupID]} \
+   --listeners Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80"
