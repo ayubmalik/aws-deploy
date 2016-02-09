@@ -23,7 +23,7 @@ SubnetName="subnet-${AppName}"
 echo "Getting instances"
 InstanceIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
 echo "Instances: ${InstanceIDs}"
-if [[ ${InstanceIDs} != "" ]]; then
+if [[ ! -z ${InstanceIDs} ]]; then
   delay=5
   TerminatedIDs=
   echo "deregistering instances from loadbalancers"
@@ -43,7 +43,7 @@ aws elb delete-load-balancer --load-balancer-name ${LBName}
 echo "Getting security group"
 SecurityGroupID=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=${SecurityGroupName}" | grep SECURITYGROUPS | cut -f3)
 echo "Security group: ${SecurityGroupID}"
-if [[ ${SecurityGroupID} != "" ]]; then
+if [[ ! -z ${SecurityGroupID} ]]; then
   echo "Deleting security groups"
   aws ec2 delete-security-group --group-id ${SecurityGroupID}
 fi
@@ -51,7 +51,7 @@ fi
 echo "Getting subnet"
 SubnetID=$(aws ec2 describe-subnets --filters "Name=tag:Name,Values=${SubnetName}" | grep SUBNETS | cut -f8)
 echo "Subnet: ${SubnetID}"
-if [[ ${SubnetID} != "" ]]; then
+if [[ ! -z ${SubnetID} ]]; then
   echo "Deleting subnet"
   aws ec2 delete-subnet --subnet-id ${SubnetID}
 fi
