@@ -47,11 +47,13 @@ SecurityGroupID=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Valu
 echo "Security group: ${SecurityGroupID}"
 if [[ ! -z ${SecurityGroupID} ]]; then
   aws ec2 delete-security-group --group-id ${SecurityGroupID}
-  if [[ $? -ne 0 ]]; then
-    echo "Retrying deleting security groups after ${Delay}s"
-    sleep ${Delay}
+  Count=0
+  while [[ $? -ne 0 && ${Count} -lt 3 ]]; do
+    echo "Retry ${count}, deleting security groups after ${Delay}s"
+    sleep ${Delay};
+    Count=$((Count + 1))
     aws ec2 delete-security-group --group-id ${SecurityGroupID}
-  fi
+  done
 fi
 
 echo "Getting subnet"
