@@ -36,8 +36,8 @@ if [[ ! -z ${InstanceIDs} ]]; then
   done
 fi
 echo "Checking instance state after termination"
-InstanceIDs=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName}")
-echo "Instances: ${InstanceIDs}"
+InstanceStates=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName} | grep STATE")
+echo "Instance states: ${InstanceIDs}"
 
 echo "Deleting load balancer"
 aws elb delete-load-balancer --load-balancer-name ${LBName}
