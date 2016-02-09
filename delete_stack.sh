@@ -14,30 +14,29 @@ runaws() {
 }
 
 declare AppName
-
+declare Delay
 read -p "Enter App/StackName: " AppName
 LBName="lb-${AppName}"
 SecurityGroupName="secgroup-${AppName}"
 SubnetName="subnet-${AppName}"
-
+Delay=5
 echo "Getting instances"
 InstanceIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
 echo "Instances: ${InstanceIDs}"
 if [[ ! -z ${InstanceIDs} ]]; then
-  delay=5
   ShuttingDownIDs=${InstanceIDs}
   echo "deregistering instances from loadbalancers"
   aws elb deregister-instances-from-load-balancer --load-balancer-name ${LBName} --instances ${InstanceIDs}
   echo "terminating instances"
   aws ec2 terminate-instances --instance-ids ${InstanceIDs}
   while [[ ! -z ${ShuttingDownIDs} ]]; do
-    echo "Waiting ${delay}s for all instances to terminate..."
-    sleep ${delay}
+    echo "Waiting ${Delay}s for all instances to terminate..."
+    sleep ${Delay}
     ShuttingDownIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=shutting-down" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
   done
 fi
 echo "Checking instance state after termination"
-InstanceIDs=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName}" | grep INSTANCES)
+InstanceIDs=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName}")
 echo "Instances: ${InstanceIDs}"
 
 echo "Deleting load balancer"
@@ -47,8 +46,12 @@ echo "Getting security group"
 SecurityGroupID=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=${SecurityGroupName}" | grep SECURITYGROUPS | cut -f3)
 echo "Security group: ${SecurityGroupID}"
 if [[ ! -z ${SecurityGroupID} ]]; then
-  echo "Deleting security groups"
   aws ec2 delete-security-group --group-id ${SecurityGroupID}
+  if [[ $? -ne 0 ]]; then
+    echo "Retrying deleting security groups after ${Delay}s"
+    sleep ${Delay}
+    aws ec2 delete-security-group --group-id ${SecurityGroupID}
+  fi
 fi
 
 echo "Getting subnet"
