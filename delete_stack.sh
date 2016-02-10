@@ -13,6 +13,7 @@ runaws() {
   #awsresult=$(aws ${cmd})
 }
 
+
 declare AppName
 declare Delay
 read -p "Enter App/StackName: " AppName
@@ -24,36 +25,38 @@ echo "Getting instances"
 InstanceIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
 echo "Instances: ${InstanceIDs}"
 if [[ ! -z ${InstanceIDs} ]]; then
-  ShuttingDownIDs=${InstanceIDs}
+  TerminatedIDs=
   echo "deregistering instances from loadbalancers"
   aws elb deregister-instances-from-load-balancer --load-balancer-name ${LBName} --instances ${InstanceIDs}
   echo "terminating instances"
   aws ec2 terminate-instances --instance-ids ${InstanceIDs}
-  while [[ ! -z ${ShuttingDownIDs} ]]; do
-    echo "Waiting ${Delay}s for all instances to terminate..."
+  while [[ ${TerminatedIDs} != ${InstanceIDs} ]]; do
+    echo "Waiting ${Delay}s for all instances to terminate. Currently terminated: ${TerminatedIDs}"
     sleep ${Delay}
-    ShuttingDownIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=shutting-down" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
+    TerminatedIDs=$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=terminated" "Name=tag:Name,Values=${AppName}" | grep INSTANCES | cut -f8)
   done
 fi
 echo "Checking instance state after termination"
-InstanceStates=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName} | grep STATE")
-echo "Instance states: ${InstanceIDs}"
+InstanceStates=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=${AppName}" | grep 'STATE\t')
+echo "Instance states: ${InstanceStates}"
 
 echo "Deleting load balancer"
 aws elb delete-load-balancer --load-balancer-name ${LBName}
 
+NetworkInterfaceIDs=notempty
+while [[ ! -z ${NetworkInterfaceIDs} ]]; do
+  echo "Waiting ${Delay}s for LB network interfaces to be released"
+  sleep ${Delay}
+  NetworkInterfaceIDs=$(aws ec2 describe-network-interfaces --filters "Name=description,Values=ELB ${LBName}" | grep NETWORKINTERFACES | cut -f5)
+  echo "Network interfaces: ${NetworkInterfaceIDs}"
+done
+
+exit 0
 echo "Getting security group"
 SecurityGroupID=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=${SecurityGroupName}" | grep SECURITYGROUPS | cut -f3)
 echo "Security group: ${SecurityGroupID}"
 if [[ ! -z ${SecurityGroupID} ]]; then
   aws ec2 delete-security-group --group-id ${SecurityGroupID}
-  Count=0
-  while [[ $? -ne 0 && ${Count} -lt 3 ]]; do
-    echo "Retry ${count}, deleting security groups after ${Delay}s"
-    sleep ${Delay};
-    Count=$((Count + 1))
-    aws ec2 delete-security-group --group-id ${SecurityGroupID}
-  done
 fi
 
 echo "Getting subnet"
