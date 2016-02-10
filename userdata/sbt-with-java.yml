@@ -1,13 +1,9 @@
 #cloud-config
-#repo_update: false
+repo_update: false
 #repo_upgrade: all
-repo_additions:
-  - source "bintray-sbt"
-    filename: bintray-sbt.repo
-    baseurl: https://bintray.com/sbt/rpm/rpm
-    gpgcheck: 0
-    enabled: 1
-repo_update: true
+runcmd:
+  - curl https://bintray.com/sbt/rpm/rpm | tee /etc/yum.repos.d/bintray-sbt-rpm.repo
+  - yum repolist
 packages:
   - git
   - java-1.8.0-openjdk-devel

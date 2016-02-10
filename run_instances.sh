@@ -59,4 +59,7 @@ if [[ ! -z ${instance_ids} ]]; then
   echo
   echo "Tagging instances with name: ${name_tag}"
   aws ec2 create-tags --resources ${instance_ids} --tags Key=Name,Value=${name_tag}
+  echo
+  echo "Public IPs:"
+  aws ec2 describe-instances --instance-ids ${instance_ids}| grep ASSOCIATION | uniq | cut -f4
 fi
