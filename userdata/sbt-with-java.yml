@@ -1,10 +1,11 @@
 #cloud-config
 repo_update: false
 #repo_upgrade: all
-runcmd:
-  - curl https://bintray.com/sbt/rpm/rpm | tee /etc/yum.repos.d/bintray-sbt-rpm.repo
-  - yum repolist
 packages:
   - git
   - java-1.8.0-openjdk-devel
   - sbt
+runcmd:
+  - curl https://bintray.com/sbt/rpm/rpm | tee /etc/yum.repos.d/bintray-sbt-rpm.repo
+  - yum repolist
+  - yum -y install sbt
