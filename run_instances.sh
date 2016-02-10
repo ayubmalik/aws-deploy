@@ -6,8 +6,10 @@ function parse_options() {
   subnet_id=subnet-7b5c270c #eu-west-1a
   count=1
   user_data_file=default.userdata.yml
+  name_tag=aruba
+  instance_type="t2.micro"
 
-  while getopts :k:i:s:n:u: opt; do
+  while getopts :k:i:s:c:u:n: opt; do
     case $opt in
       k)
         key_name=$OPTARG
@@ -18,30 +20,43 @@ function parse_options() {
       s)
         subnet_id=$OPTARG
         ;;
-      n)
+      c)
         count=$OPTARG
         ;;
       u)
         user_data_file=$OPTARG
+        ;;
+      n)
+        name_tag=$OPTARG
         ;;
     esac
   done
 
   if [[ -z "${key_name}" || -z "${image_id}" ]]; then
     echo
-    echo "Usage: ${0} -k key_name -i image_id [ -s subnet_id [ -n count -u user_data_file ]"
+    echo "Usage: ${0} -k key_name -i image_id [ -s subnet_id  -c count -u user_data_file -n name_tag]"
     echo
+    echo 'recommended imageid: ami-bff32ccc'
     exit 1
   fi
 }
 
 parse_options $@
 
-aws ec2 run-instances \
+awsresult=$(aws ec2 run-instances \
   --instance-type t2.micro \
+  --associate-public-ip-address \
   --key-name ${key_name} \
   --image-id ${image_id} \
   --subnet-id ${subnet_id} \
   --count ${count} \
-  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"DeleteOnTermination":true}}]' \
-  --user-data "$(<${user_data_file})"
+  --user-data "$(<${user_data_file})")
+
+echo "${awsresult}"
+instance_ids=$(grep INSTANCES <<< "${awsresult}" | cut -f8)
+
+if [[ ! -z ${instance_ids} ]]; then
+  echo
+  echo "Tagging instances with name: ${name_tag}"
+  aws ec2 create-tags --resources ${instance_ids} --tags Key=Name,Value=${name_tag}
+fi

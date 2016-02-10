@@ -1,0 +1,14 @@
+#cloud-config
+#repo_update: false
+#repo_upgrade: all
+repo_additions:
+  - source "bintray-sbt"
+    filename: bintray-sbt.repo
+    baseurl: https://bintray.com/sbt/rpm/rpm
+    gpgcheck: 0
+    enabled: 1
+repo_update: true
+packages:
+  - git
+  - java-1.8.0-openjdk-devel
+  - sbt
